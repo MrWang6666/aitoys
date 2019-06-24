@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import dataloader
 from torchvision import transforms, datasets
+from torch import optim
 
 MNIST_PATY = r"/Users/magichao/PycharmProjects/helloai/MNIST/MNIST_data"
 EPOCH = 100
@@ -33,3 +34,10 @@ class LeNet_5(nn.Module):
     def __len__(self):
         pass
 
+net = LeNet_5()
+
+# 定义loss，使用交叉熵loss
+loss_fn = nn.CrossEntropyLoss()
+# 定义优化器
+optimizer = optim.Adam(params=net.parameters());
+# 训练
