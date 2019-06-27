@@ -4,9 +4,10 @@ from torch.utils.data import dataloader
 from torchvision import transforms, datasets
 from torch import optim
 
-MNIST_PATY = r"/Users/magichao/PycharmProjects/helloai/MNIST/MNIST_data"
-EPOCH = 100
-BATCH_SIZE = 30
+
+MNIST_PATH = r"/Users/magichao/PycharmProjects/helloai/MNIST/MNIST_data"
+EPOCH = 1
+BATCH_SIZE = 100
 
 # 数据归一化对象
 data_transform = transforms.Compose([
@@ -15,9 +16,9 @@ data_transform = transforms.Compose([
 ])
 
 # 数据集加载
-train_dataset = datasets.MNIST(MNIST_PATY, train=True, transform=data_transform, download=False)
+train_dataset = datasets.MNIST(MNIST_PATH, train=True, transform=data_transform, download=False)
 train_dataload = dataloader.DataLoader(dataset=train_dataset, batch_size=BATCH_SIZE, shuffle=True)
-test_dataset = datasets.MNIST(MNIST_PATY, train=True, transform=data_transform, download=False)
+test_dataset = datasets.MNIST(MNIST_PATH, train=True, transform=data_transform, download=False)
 test_dataload = dataloader.DataLoader(dataset=test_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
 
@@ -31,8 +32,8 @@ class LeNet_5(nn.Module):
         self.conv1 = nn.Sequential(
             nn.Conv2d(in_channels=1, out_channels=8, kernel_size=5, stride=2, padding=0),
             nn.BatchNorm2d(num_features=8),
-            nn.ReLU(inplace=False)
-            # nn.MaxPool1d()
+            nn.ReLU(inplace=False),
+            nn.MaxPool2d()
         )# batch, 8, 12, 12 | (28 - 5 + 2*0) / 2 + 1
 
 
@@ -87,8 +88,6 @@ for epoch in range(EPOCH):
 
         out = net(img)
 
-        print(out.size())
-
         loss = loss_fn(out, lable)
         optimizer.zero_grad()
         loss.backward()
@@ -96,4 +95,36 @@ for epoch in range(EPOCH):
 
         if i % 10 == 0:
             print('epoch: {},i: {}, loss: {:.3}'.format(epoch, i, loss.data.to(device).item()))  # 损失值显示3位
+
+# 评估模型
+net.eval()
+# 评估损失累积
+eval_loss = 0
+# 累加精度
+eval_acc = 0
+for i, (img, lable) in enumerate(test_dataload):
+
+    out = net(img)
+
+    loss = loss_fn(out, lable)
+    # 求输出的最大值索引
+    pred_out = torch.argmax(out, dim=1)
+
+    num_correct = (pred_out == lable).sum()
+    eval_acc += num_correct.item()
+    eval_loss += loss.data.to(device).item() * lable.size(0)
+
+
+
+print("out data: \n", torch.argmax(out, 1))
+print("lable data: \n", lable)
+print(torch.max(out, 1))
+
+print('Test Loss: {:.3}, Acc: {:.3}'.format(
+    # 测试数据集里的平均损失，累计损失➗测试集中样本数量
+    eval_loss / (len(test_dataset)),
+    # 同上
+    eval_acc / (len(test_dataset))
+))
+
 
